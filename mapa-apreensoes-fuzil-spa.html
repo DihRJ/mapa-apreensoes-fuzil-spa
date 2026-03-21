@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Apreensões de Fuzil — São Pedro da Aldeia</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh;}
+  @keyframes pulse{0%{transform:scale(1);opacity:.35}100%{transform:scale(2.8);opacity:0}}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 48px;}
+  .header{margin-bottom:22px;}
+  .header h1{font-size:22px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+  .header p{font-size:13px;color:#666;}
+  .badge-ok{display:inline-block;font-size:11px;background:#eaf3de;color:#3b6d11;padding:4px 10px;border-radius:6px;font-weight:600;margin-top:6px;}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+  .card{background:#fff;border-radius:10px;border:0.5px solid #ddd;padding:14px;}
+  .card .lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:4px;}
+  .card .val{font-size:24px;font-weight:600;color:#1a1a1a;}
+  .card .val.red{color:#c0392b;}
+  .card .val.grn{color:#27730a;}
+  .body{display:grid;grid-template-columns:260px 1fr;gap:12px;align-items:start;}
+  .sidebar{background:#fff;border-radius:12px;border:0.5px solid #ddd;padding:12px;}
+  .sidebar .stitle{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+  .ii{padding:9px 10px;border-radius:8px;cursor:pointer;border:0.5px solid transparent;margin-bottom:4px;transition:background .15s;}
+  .ii:hover{background:#f0efe9;border-color:#ccc;}
+  .ii.on{background:#e6f0fb;border-color:#b5d4f4;}
+  .ii-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+  .ii-title{font-size:13px;font-weight:600;color:#1a1a1a;line-height:1.3;margin-bottom:2px;}
+  .ii-sub{font-size:11px;color:#888;}
+  .leg-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 7px;padding-top:12px;border-top:0.5px solid #e0e0e0;}
+  .leg-row{display:flex;align-items:center;gap:7px;font-size:12px;color:#666;margin-bottom:4px;}
+  .leg-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  #mapel{height:470px;border-radius:12px;border:0.5px solid #ddd;overflow:hidden;}
+  #dpanel{display:none;margin-top:12px;background:#fff;border-radius:12px;border:0.5px solid #ddd;padding:20px;}
+  .tag{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;}
+  .tag-cv{background:#fcebeb;color:#a32d2d;border:0.5px solid #f09595;}
+  .dp-title{font-size:16px;font-weight:600;color:#1a1a1a;margin:6px 0 4px;}
+  .dp-meta{font-size:13px;color:#666;margin-bottom:12px;}
+  .dp-desc{font-size:14px;line-height:1.75;color:#333;}
+  .dp-prj{display:inline-block;font-size:13px;font-weight:600;background:#eaf3de;color:#27730a;padding:5px 12px;border-radius:6px;margin-top:10px;}
+  .dp-fonte{font-size:11px;color:#aaa;margin-top:10px;}
+  .box{background:#f8f7f3;border-radius:8px;padding:12px;margin-bottom:10px;}
+  .box .blbl{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+  .box ul{padding-left:16px;font-size:13px;line-height:1.9;color:#333;}
+  .box .bval{font-size:17px;font-weight:600;color:#1a1a1a;}
+  .dp-grid{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+  .dp-left{flex:2;min-width:260px;}
+  .dp-right{display:flex;flex-direction:column;gap:10px;min-width:170px;}
+  .dp-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:0.5px solid #eee;flex-wrap:wrap;gap:8px;}
+  .btn-close{font-size:12px;color:#666;background:none;border:0.5px solid #ccc;padding:5px 14px;border-radius:6px;cursor:pointer;}
+  .btn-close:hover{background:#f0efe9;}
+  .leaflet-popup-content-wrapper{border-radius:8px!important;box-shadow:0 2px 8px rgba(0,0,0,.12)!important;font-size:13px;}
+  .leaflet-popup-tip{display:none;}
+  footer{text-align:center;font-size:11px;color:#aaa;margin-top:32px;padding-top:16px;border-top:0.5px solid #ddd;}
+  @media(max-width:720px){
+    .cards{grid-template-columns:repeat(2,1fr);}
+    .body{grid-template-columns:1fr;}
+    .sidebar{order:2;}
+    #mapel{order:1;height:340px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <h1>Apreensões de fuzil — São Pedro da Aldeia</h1>
+    <p>Incidentes confirmados dentro do município · 2022–2026 · 25º BPM / PF / SESORP</p>
+    <span class="badge-ok">6 ocorrências validadas</span>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="lbl">Operações</div><div class="val">6</div></div>
+    <div class="card"><div class="lbl">Fuzis confirmados</div><div class="val red">8+</div></div>
+    <div class="card"><div class="lbl">Calibres identificados</div><div class="val" style="font-size:18px;">5.56 / 7.62</div></div>
+    <div class="card"><div class="lbl">Prejuízo estimado</div><div class="val grn" style="font-size:18px;">R$ 935k+</div></div>
+  </div>
+
+  <div class="body">
+    <div class="sidebar">
+      <div class="stitle">Ocorrências confirmadas</div>
+      <div id="ilist"></div>
+      <div class="leg-title">Calibres</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#E24B4A;"></span>5.56mm (OTAN / Colt / Taurus)</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#BA7517;"></span>7.62mm (AK-47 / Mauser)</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#534AB7;"></span>Múltiplos calibres</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#888780;"></span>Não especificado</div>
+    </div>
+    <div id="mapel"></div>
+  </div>
+
+  <div id="dpanel">
+    <div id="dcont"></div>
+  </div>
+
+  <footer>
+    Dados: 25º BPM · Polícia Federal · GAECO/MPRJ · SEPM-RJ · SESORP São Pedro da Aldeia<br>
+    Mapa: OpenStreetMap © CARTO · Atualizado em março de 2026
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+var CCOL={'5.56mm':'#E24B4A','7.62mm':'#BA7517','MULTI':'#534AB7','N/E':'#888780'};
+
+var INC=[
+  {id:1,title:'Cisne Branco — PF / GAECO',date:'Mar 2022',bairro:'Condomínio Cisne Branco',cal:'MULTI',lat:-22.8530,lng:-42.0990,
+   unidade:'Polícia Federal + GAECO/MPRJ',del:'PF',presos:'1+',faccao:'',
+   armas:['3 fuzis','1 carregador de fuzil AK-47 (7.62mm)'],
+   outros:['~150 tabletes de cocaína','R$ 350.000 em espécie','Uniformes operacionais','Celulares e rádios transmissores','4 veículos apreendidos'],
+   prejuizo:'R$ 350.000+ (espécie apreendida)',fonte:'JusBrasil / PF',
+   desc:'Operação conjunta da Polícia Federal e GAECO apreendeu três fuzis e carregador de AK-47 dentro de quatro veículos no Condomínio Cisne Branco. A ação integrou investigação sobre rota de armamento e drogas abastecendo São Pedro da Aldeia e Cabo Frio. No mesmo dia, interceptação na Via Lagos prendeu um transportador com 8 pistolas, 1.000 munições e 600 munições de fuzil destinadas à Região dos Lagos.'},
+  {id:2,title:'Parque Estoril — carregadores de fuzil',date:'30/07/2023',bairro:'Parque Estoril',cal:'MULTI',lat:-22.8580,lng:-42.0855,
+   unidade:'25º BPM',del:'126ª DP',presos:'2',faccao:'',
+   armas:['9 carregadores de fuzil 5.56mm','2 carregadores de fuzil 7.62mm','Espingarda Rossi cal. 12','Kit Roni','2 pistolas Glock G17 9mm','2 pistolas Ramon 9mm','1 pistola Imbel 1911 9mm'],
+   outros:['10.683 cápsulas de cocaína','10.404 pedras de crack','12 kg de cocaína','10 kg de maconha','3 balanças de precisão','22 mil pinos de plástico'],
+   prejuizo:'R$ 585.000',fonte:'Portal O São Gonçalo / Dados SESORP',
+   desc:'Dois suspeitos interceptados em veículo confessaram armazenar e distribuir armas e drogas para as comunidades "Boca do Mato" e "Bairro São João". Busca em residência revelou carregadores de fuzil calibres 5.56mm e 7.62mm. Um dos detidos tinha três passagens pela polícia. Prejuízo estimado de R$ 585.000 ao crime organizado.'},
+  {id:3,title:'Chaparral — fuzil apreendido',date:'05/02/2024',bairro:'Chaparral',cal:'N/E',lat:-22.8475,lng:-42.0940,
+   unidade:'25º BPM',del:'125ª DP',presos:'—',faccao:'',
+   armas:['1 fuzil (tipo não especificado)'],outros:['Material em apuração'],
+   prejuizo:'',fonte:'Dados fornecidos (SESORP)',
+   desc:'Operação policial no bairro Chaparral resultou na apreensão de um fuzil. Tipo e calibre do armamento não foram especificados no registro. Material encaminhado à 125ª DP para perícia e investigação.'},
+  {id:4,title:'Bela Vista / RJ-124 — Colt 5.56',date:'06/05/2025',bairro:'Bela Vista (RJ-124)',cal:'5.56mm',lat:-22.8340,lng:-42.1170,
+   unidade:'25º BPM',del:'125ª DP',presos:'—',faccao:'',
+   armas:['1 fuzil Colt calibre 5.56mm'],outros:['Material em apuração'],
+   prejuizo:'',fonte:'Dados fornecidos (SESORP)',
+   desc:'Fuzil Colt calibre 5.56mm (padrão OTAN) foi apreendido na região de Bela Vista, às margens da rodovia RJ-124. O armamento é compatível com fuzis de assalto amplamente utilizados por organizações criminosas no estado do Rio de Janeiro.'},
+  {id:5,title:'Alecrim / MCMV — Mauser 7.62',date:'11/01/2026',bairro:'Alecrim / Minha Casa Minha Vida',cal:'7.62mm',lat:-22.8290,lng:-42.1030,
+   unidade:'25º BPM',del:'125ª DP',presos:'—',faccao:'',
+   armas:['1 fuzil Mauser calibre 7.62mm','1 espingarda'],
+   outros:['Colete balístico','Coldres','Toucas ninjas','Luvas','Rádio transmissor','Entorpecentes'],
+   prejuizo:'',fonte:'SEPM-RJ / Dados SESORP',
+   desc:'Agentes do 25º BPM realizaram operação no bairro Alecrim, área do conjunto Minha Casa Minha Vida, apreendendo fuzil Mauser 7.62mm e espingarda. A operação integrou o levantamento estadual de 27 fuzis recolhidos no início de 2026. Todo o material encaminhado à 125ª DP.'},
+  {id:6,title:'Baixo Grande — Taurus T4 5.56',date:'20/03/2026',bairro:'Baixo Grande',cal:'5.56mm',lat:-22.8135,lng:-42.0880,
+   unidade:'25º BPM',del:'125ª DP',presos:'—',faccao:'Comando Vermelho',
+   armas:['1 fuzil Taurus T4 calibre 5.56mm','3 carregadores','54 munições de uso restrito'],
+   outros:['Arma ocultada / enterrada na comunidade','Localizada via Disque Denúncia'],
+   prejuizo:'',fonte:'Facebook / 25º BPM',
+   desc:'Policiais do 25º BPM localizaram fuzil Taurus T4 calibre 5.56mm enterrado na comunidade do bairro Baixo Grande, após denúncia de que traficantes do Comando Vermelho estariam ocultando armamento no local. Além do fuzil, foram apreendidos três carregadores e 54 munições de uso restrito. A 125ª DP investiga a autoria do esconderijo.'}
+];
+
+var ilist=document.getElementById('ilist');
+INC.forEach(function(inc){
+  var c=CCOL[inc.cal];
+  var d=document.createElement('div');
+  d.className='ii';d.id='i'+inc.id;
+  d.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start;">'+
+    '<span class="ii-dot" style="background:'+c+';"></span>'+
+    '<div><div class="ii-title">'+inc.title+'</div>'+
+    '<div class="ii-sub">'+inc.date+' · '+inc.bairro+'</div></div></div>';
+  d.onclick=(function(id){return function(){sel(id);};})(inc.id);
+  ilist.appendChild(d);
+});
+
+var map=L.map('mapel',{center:[-22.840,-42.103],zoom:13,scrollWheelZoom:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a>',
+  subdomains:'abcd',maxZoom:19
+}).addTo(map);
+
+INC.forEach(function(inc){
+  var c=CCOL[inc.cal];
+  var icon=L.divIcon({
+    html:'<div style="position:relative;width:32px;height:32px;overflow:visible;">'+
+      '<div style="position:absolute;inset:0;border-radius:50%;background:'+c+';opacity:.28;animation:pulse 2.4s ease-out infinite;transform-origin:center;"></div>'+
+      '<div style="position:absolute;inset:8px;border-radius:50%;background:'+c+';border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,.25);"></div></div>',
+    className:'',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-20]
+  });
+  var mk=L.marker([inc.lat,inc.lng],{icon}).addTo(map);
+  mk.bindTooltip('<strong>'+inc.title+'</strong><br><span style="color:#666;font-size:11px;">'+inc.date+'</span>',
+    {direction:'top',offset:[0,-12]});
+  mk.on('click',(function(id){return function(){sel(id);};})(inc.id));
+});
+
+function closePanel(){
+  document.getElementById('dpanel').style.display='none';
+  document.querySelectorAll('.ii').forEach(function(e){e.classList.remove('on');});
+  map.flyTo([-22.840,-42.103],13,{duration:1});
+}
+
+function sel(id){
+  document.querySelectorAll('.ii').forEach(function(e){e.classList.remove('on');});
+  var si=document.getElementById('i'+id);
+  if(si){si.classList.add('on');si.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  var inc=INC.find(function(i){return i.id===id;});
+  if(!inc)return;
+  map.flyTo([inc.lat,inc.lng],15,{duration:1.2});
+  var c=CCOL[inc.cal];
+  var clbl={'5.56mm':'5.56mm — OTAN','7.62mm':'7.62mm — Mauser / AK-47','MULTI':'Múltiplos calibres','N/E':'Calibre não especificado'}[inc.cal];
+  var armasH=inc.armas.map(function(a){return '<li>'+a+'</li>';}).join('');
+  var outrosH=inc.outros.map(function(o){return '<li>'+o+'</li>';}).join('');
+  var prejH=inc.prejuizo?'<div class="dp-prj">Prejuízo ao crime: '+inc.prejuizo+'</div>':'';
+  var facH=inc.faccao?'<span class="tag tag-cv">'+inc.faccao+'</span>':'';
+
+  document.getElementById('dcont').innerHTML=
+    '<div class="dp-grid">'+
+    '<div class="dp-left">'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">'+
+    '<span class="tag" style="background:'+c+'22;color:'+c+';border:0.5px solid '+c+'55;">'+clbl+'</span>'+facH+'</div>'+
+    '<div class="dp-title">'+inc.title+'</div>'+
+    '<div class="dp-meta">'+inc.date+' · '+inc.bairro+' · '+inc.unidade+' · Delegacia: <strong>'+inc.del+'</strong> · Presos: <strong>'+inc.presos+'</strong></div>'+
+    '<div class="dp-desc">'+inc.desc+'</div>'+
+    prejH+
+    '<div class="dp-fonte">Fonte: '+inc.fonte+'</div>'+
+    '</div>'+
+    '<div class="dp-right">'+
+    '<div class="box"><div class="blbl">Armas apreendidas</div><ul>'+armasH+'</ul></div>'+
+    '<div class="box"><div class="blbl">Contexto operacional</div><ul>'+outrosH+'</ul></div>'+
+    '<div class="box"><div class="blbl">Detidos</div><div class="bval">'+inc.presos+'</div></div>'+
+    '</div></div>'+
+    '<div class="dp-foot">'+
+    '<span style="font-size:11px;color:#aaa;">Clique no mapa ou na lista para navegar entre ocorrências</span>'+
+    '<button class="btn-close" id="closebtn">Fechar painel</button>'+
+    '</div>';
+
+  var p=document.getElementById('dpanel');
+  p.style.display='block';
+  document.getElementById('closebtn').addEventListener('click',closePanel);
+  setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'nearest'});},300);
+}
+</script>
+</body>
+</html>
